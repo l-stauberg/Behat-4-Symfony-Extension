@@ -6,8 +6,13 @@ namespace FriendsOfBehat\SymfonyExtension\Driver;
 
 use Behat\Mink\Driver\BrowserKitDriver;
 use Symfony\Component\BrowserKit\AbstractBrowser;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
 
+/**
+ * @extends BrowserKitDriver<Request, Response>
+ */
 final class SymfonyDriver extends BrowserKitDriver
 {
     /** @var KernelInterface */
