@@ -71,5 +71,11 @@
                 <file name="src/ServiceContainer/SymfonyExtension.php" />
             </errorLevel>
         </UnusedForeachValue>
+
+        <UnusedMethodCall>
+            <errorLevel type="suppress">
+                <file name="src/ServiceContainer/SymfonyExtension.php" />
+            </errorLevel>
+        </UnusedMethodCall>
     </issueHandlers>
 </psalm>
