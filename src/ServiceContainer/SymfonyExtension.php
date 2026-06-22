@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FriendsOfBehat\SymfonyExtension\ServiceContainer;
 
 use Behat\Behat\Context\ServiceContainer\ContextExtension;
+use Behat\Config\ExtensionConfigInterface;
 use Behat\Mink\Session;
 use Behat\MinkExtension\ServiceContainer\MinkExtension;
 use Behat\Testwork\Environment\ServiceContainer\EnvironmentExtension;
@@ -22,8 +23,9 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Parameter;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\Dotenv\Dotenv;
 
-final class SymfonyExtension implements Extension
+final class SymfonyExtension implements Extension, ExtensionConfigInterface
 {
     /**
      * Kernel used inside Behat contexts or to create services injected to them.
@@ -44,6 +46,18 @@ final class SymfonyExtension implements Extension
     public function getConfigKey(): string
     {
         return 'fob_symfony';
+    }
+
+    #[\Override]
+    public function name(): string
+    {
+        return self::class;
+    }
+
+    #[\Override]
+    public function toArray(): array
+    {
+        return [];
     }
 
     #[\Override]
@@ -75,7 +89,10 @@ final class SymfonyExtension implements Extension
     #[\Override]
     public function load(ContainerBuilder $container, array $config): void
     {
-        $this->setupTestEnvironment($config['kernel']['environment'] ?? 'test');
+        $this->setupTestEnvironment(
+            $config['kernel']['environment'] ?? 'test',
+            $container->getParameterBag()->get('paths.base'),
+        );
 
         $this->loadBootstrap($this->autodiscoverBootstrap($config['bootstrap'], $container->getParameterBag()));
 
@@ -183,8 +200,15 @@ final class SymfonyExtension implements Extension
         require_once $bootstrap;
     }
 
-    private function setupTestEnvironment(string $fallback): void
+    private function setupTestEnvironment(string $fallback, string $basePath): void
     {
+        // Ensure .env is loaded, older symfony versions loaded it through bootstrap
+        // Now it only loads them when being called from /public/index.php or through bin/console
+        $envPath = $basePath . '/.env';
+        if (class_exists(Dotenv::class) && file_exists($envPath)) {
+            (new Dotenv())->bootEnv($envPath, $fallback);
+        }
+
         // If there's no defined server / environment variable with an environment, default to configured fallback
         if (($_SERVER['APP_ENV'] ?? $_ENV['APP_ENV'] ?? null) === null) {
             putenv('APP_ENV=' . $_SERVER['APP_ENV'] = $_ENV['APP_ENV'] = $fallback);
